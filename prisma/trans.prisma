@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/trans-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_TRANS_URL")
+}
+
+model mst_new_order {
+  mno_id                  Int       @id @default(autoincrement())
+  mno_uuid                String    @unique @default(uuid())
+  mno_user_uuid           String
+  mno_created_date        DateTime
+  mno_created_by          String
+  mno_updated_date        DateTime?
+  mno_updated_by          String?
+  mno_invoice_id          String?
+  mno_send_address        String?
+  mno_received_address    String?
+  mno_product_list_uuid   Json?
+  mno_shipper_id          String?
+  mno_shipper_name        String?
+  mno_payment_source_uuid String?
+  mno_payment_type        String?
+  mno_payment_prove_url   String?
+  mno_approved_by         String?
+  mno_remark              String?
+}
+
+model mst_order {
+  mo_id                  Int            @id @default(autoincrement())
+  mo_uuid                String         @unique @default(uuid())
+  mo_user_uuid           String
+  mo_created_date        DateTime
+  mo_created_by          String
+  mo_updated_date        DateTime?
+  mo_updated_by          String?
+  mo_invoice_id          String?
+  mo_send_address        String?
+  mo_received_address    String?
+  mo_product_list_uuid   Json?
+  mo_shipper_id          String?
+  mo_shipper_name        String?
+  mo_shipping_number     String?
+  mo_receipt_number      String?
+  mo_status              shippingStatus @default(NEED_TO_BE_SENT)
+  mo_is_cancelled        Boolean        @default(false)
+  mo_cancelled_reason    String?
+  mo_cancelled_action    String?
+  mo_payment_source_uuid String?
+  mo_payment_type        String?
+  mo_payment_prove_url   String?
+  mo_approved_by         String?
+  mo_remark              String?
+}
+
+model mst_midtrans_transaction_log {
+  mmtl_id           Int           @id @default(autoincrement())
+  mmtl_uuid         String        @unique @default(uuid())
+  mmtl_created_date DateTime      @default(now())
+  mmtl_user_uuid    String
+  mmtl_product_uuid String
+  mmtl_product_name String
+  mmtl_order_uuid   String
+  mmtl_status       PaymentStatus @default(PENDING)
+}
+
+model mst_sprint_transaction_log {
+  mstl_id           Int           @id @default(autoincrement())
+  mstl_uuid         String        @unique @default(uuid())
+  mstl_created_date DateTime      @default(now())
+  mstl_user_uuid    String
+  mstl_product_uuid String
+  mstl_product_name String
+  mstl_order_uuid   String
+  mstl_status       PaymentStatus @default(PENDING)
+}
+
+model mst_payment_history {
+  mph_id              Int            @id @default(autoincrement())
+  mph_uuid            String         @unique @default(uuid())
+  mph_created_date    DateTime       @default(now())
+  mph_payment_gateway PaymentGateway
+  mph_payment_uuid    String
+  mph_history_type    HistoryType    @default(REQUEST)
+  mph_request_json    Json?
+  mph_response_json   Json?
+}
+
+model mst_user_wallet {
+  muw_id            Int                     @id @default(autoincrement())
+  muw_uuid          String                  @unique @default(uuid())
+  muw_user_uuid     String
+  muw_created_date  DateTime                @default(now())
+  muw_updated_date  DateTime                @default(now())
+  muw_created_by    String
+  muw_updated_by    String?
+  muw_user_name     String
+  muw_wallet_type   WalletType
+  muw_latest_remark String?
+  muw_balance       Float                   @default(0)
+  fundsWallet       mst_funds_wallet_log[]
+  pointWallet       mst_points_wallet_log[]
+}
+
+model mst_funds_wallet_log {
+  mfwl_id                  Int             @id @default(autoincrement())
+  mfwl_uuid                String          @unique @default(uuid())
+  mfwl_wallet_uuid         String
+  mfwl_trans_type          WalletTransType
+  mfwl_trans_name          WalletTransName
+  mfwl_balance_before      Float           @default(0)
+  mfwl_balance_after       Float           @default(0)
+  mfwl_payment_source_id   String?
+  mfwl_payment_source_name String?
+  mfwl_order_id            String?
+  mfwl_approved_by         String?
+  mfwl_remark              String?
+  wallet                   mst_user_wallet @relation(fields: [mfwl_wallet_uuid], references: [muw_uuid])
+}
+
+model mst_points_wallet_log {
+  mpwl_id                  Int             @id @default(autoincrement())
+  mpwl_uuid                String          @unique @default(uuid())
+  mpwl_wallet_uuid         String
+  mpwl_trans_type          WalletTransType
+  mpwl_trans_name          WalletTransName
+  mpwl_balance_before      Float           @default(0)
+  mpwl_balance_after       Float           @default(0)
+  mpwl_payment_source_id   String?
+  mpwl_payment_source_name String?
+  mpwl_order_id            String?
+  mpwl_approved_by         String?
+  mpwl_remark              String?
+  wallet                   mst_user_wallet @relation(fields: [mpwl_wallet_uuid], references: [muw_uuid])
+}
+
+enum shippingStatus {
+  UNPAID
+  NEED_TO_BE_SENT
+  SENDING
+  RECEIVED
+  INSTALLMENT
+  CANCELLED
+}
+
+enum HistoryType {
+  REQUEST
+  CALLBACK
+}
+
+enum PaymentGateway {
+  MIDTRANS
+  SPRINT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCEL
+  REFUND
+}
+
+enum WalletType {
+  POINT
+  FUNDS
+}
+
+enum WalletTransType {
+  INFLOW
+  OUTFLOW
+}
+
+enum WalletTransName {
+  EARNING
+  REDEEM
+  REFUND
+  COMMISSION
+}

@@ -1,0 +1,49 @@
+{
+  "name": "commerce-server",
+  "version": "1.0.0",
+  "description": "Servers",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register ./app.ts",
+    "test": "dev",
+    "coredb:pull": "prisma db pull --schema=./prisma/core.prisma",
+    "coredb:push": "prisma db push --schema=./prisma/core.prisma",
+    "coredb:generate": "prisma generate --schema=./prisma/core.prisma",
+    "transdb:pull": "prisma db pull --schema=./prisma/trans.prisma",
+    "transdb:push": "prisma db push --schema=./prisma/trans.prisma",
+    "transdb:generate": "prisma generate --schema=./prisma/trans.prisma"
+  },
+  "author": "borong-borong",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/multipart": "^9.0.1",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/static": "^8.0.1",
+    "@googlemaps/google-maps-services-js": "^3.4.0",
+    "@prisma/client": "^5.20.0",
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "fastify-jwt": "^4.2.0",
+    "fastify-plugin": "^5.0.1",
+    "fastify-zod": "^1.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.7",
+    "nodemon": "^3.1.7",
+    "prisma": "^5.20.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.7.4",
+    "@types/validator": "^13.12.2",
+    "eslint": "^9.11.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.6.2"
+  }
+}

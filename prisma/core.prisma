@@ -1,0 +1,548 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/core-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_CORE_URL")
+}
+
+model mst_user {
+  mu_id               Int                  @id @default(autoincrement())
+  mu_user_uuid        String               @unique @default(uuid())
+  mu_created_date     DateTime             @default(now())
+  mu_updated_date     DateTime             @updatedAt
+  mu_full_name        String?
+  mu_email            String?              @unique
+  mu_phone_number     String?              @unique
+  mu_password         String
+  mu_birth_place      String?
+  mu_birth_date       DateTime?
+  mu_profile_picture  String?
+  mu_gender           Gender?              @default(OTHERS)
+  mu_type             UserType             @default(USER)
+  mu_session_auth     String?
+  mu_referral_code    String?
+  mu_referred_by      String?
+  mu_current_location String?
+  membershipInfo      mst_membership_info?
+  resellerInfo        mst_reseller_info?
+  address             mst_user_address[]
+
+  @@index([mu_email, mu_phone_number])
+}
+
+model mst_membership_info {
+  mmi_id               Int             @id @default(autoincrement())
+  mmi_user_uuid        String          @unique
+  mmi_membership_level MembershipLevel @default(SILVER)
+  mmi_created_date     DateTime
+  mmi_updated_date     DateTime
+  mmi_religion         Religion?
+  mmi_occupation       String?
+  mmi_nik              String?
+  mmi_main_address     String?
+  mmi_postal_code      String?         @db.VarChar(6)
+  user                 mst_user        @relation(fields: [mmi_user_uuid], references: [mu_user_uuid])
+
+  @@index([mmi_user_uuid])
+}
+
+model mst_user_address {
+  mua_id               Int      @id @default(autoincrement())
+  mua_user_uuid        String
+  mua_label            String
+  mua_type             String?
+  mua_status           String
+  mua_receiver_name    String
+  mua_receiver_number  String
+  mua_courier_note     String?
+  mua_complete_address String
+  mua_maps_info        Json?
+  user                 mst_user @relation(fields: [mua_user_uuid], references: [mu_user_uuid])
+
+  @@index([mua_user_uuid])
+}
+
+model mst_reseller_info {
+  mri_id        Int      @id @default(autoincrement())
+  mri_user_uuid String   @unique
+  mri_full_name String
+  user          mst_user @relation(fields: [mri_user_uuid], references: [mu_user_uuid])
+}
+
+model mst_store_dc {
+  msd_id                 Int                    @id @default(autoincrement())
+  msd_uuid               String                 @unique @default(uuid())
+  msd_store_name         String
+  msd_store_description  String?
+  msd_store_map_location String?
+  msd_place_id           String?
+  msd_type               StoreType              @default(STORE)
+  msd_location           String?
+  msd_operational_hours  String?
+  msd_price_reference    String?
+  msd_regions_uuid       String
+  coupon                 mst_coupon[]
+  product                mst_product[]
+  region                 mst_references_regions @relation(fields: [msd_regions_uuid], references: [mrr_uuid])
+  staff                  mst_store_staff[]
+  storeSummary           mst_store_summary[]
+}
+
+model mst_store_staff {
+  mss_id                Int          @id @default(autoincrement())
+  mss_uuid              String       @unique @default(uuid())
+  mss_store_uuid        String
+  mss_staff_name        String
+  mss_staff_level       String
+  mss_created_date      DateTime
+  mss_updated_date      DateTime?
+  mss_created_by        String
+  mss_updated_by        String?
+  mss_working_hours     String?
+  mss_start_end_working String?
+  mss_status            String?
+  mss_address           String?
+  store                 mst_store_dc @relation(fields: [mss_store_uuid], references: [msd_uuid])
+}
+
+model mst_store_summary {
+  mss_id             Int          @id @default(autoincrement())
+  mss_store_uuid     String
+  mss_store_name     String
+  mss_store_location String
+  mss_created_date   DateTime     @default(now())
+  mss_inflow         Float        @default(0)
+  mss_outflow        Float        @default(0)
+  mss_product_sold   Int          @default(0)
+  store              mst_store_dc @relation(fields: [mss_store_uuid], references: [msd_uuid])
+}
+
+model mst_coupon {
+  mc_id                    Int               @id @default(autoincrement())
+  mc_uuid                  String            @unique @default(uuid())
+  mc_store_uuid            String
+  mc_created_date          DateTime          @default(now())
+  mc_expired_date          DateTime?
+  mc_updated_date          DateTime?
+  mc_created_by            String
+  mc_coupon_name           String
+  mc_coupon_description    String?
+  mc_coupon_discount       String?
+  mc_coupon_discount_price String?
+  mc_coupon_code           String?
+  mc_coupon_type           CouponVoucherType @default(FREE)
+  mc_coupon_shipping_id    String?
+  mc_coupon_use_limit      String?
+  mc_coupon_show           ShowingType       @default(SHOWN)
+  mc_coupon_status         statusType        @default(ACTIVE)
+  store                    mst_store_dc      @relation(fields: [mc_store_uuid], references: [msd_uuid])
+}
+
+model mst_voucher {
+  mv_id                     Int               @id @default(autoincrement())
+  mv_uuid                   String            @unique @default(uuid())
+  mv_created_date           DateTime          @default(now())
+  mv_expired_date           DateTime?
+  mv_updated_date           DateTime?
+  mv_created_by             String
+  mv_voucher_name           String
+  mv_voucher_description    String?
+  mv_voucher_discount       String?
+  mv_voucher_discount_price String?
+  mv_voucher_code           String
+  mv_voucher_type           CouponVoucherType @default(FREE)
+  mv_voucher_shipping_id    String?
+  mv_voucher_use_limit      Int?              @default(1)
+  mv_voucher_show           ShowingType       @default(SHOWN)
+  mv_voucher_status         statusType        @default(ACTIVE)
+  mv_used_by                String?
+  mv_used_order_uuid        String?
+}
+
+model mst_user_cart {
+  muc_id        Int              @id @default(autoincrement())
+  muc_uuid      String           @unique @default(uuid())
+  muc_user_uuid String?          @unique
+  muc_status    statusType       @default(NOT_ACTIVE)
+  cartItem      mst_cart_items[]
+}
+
+model mst_cart_items {
+  mci_id                   Int           @id @default(autoincrement())
+  mci_cart_uuid            String
+  mci_product_uuid         String
+  mci_product_variant_uuid String?
+  mci_cart_items           Int           @default(0)
+  mci_item_note            String
+  userCart                 mst_user_cart @relation(fields: [mci_cart_uuid], references: [muc_uuid])
+}
+
+model mst_user_wishilist {
+  muw_id        Int                  @id @default(autoincrement())
+  muw_uuid      String               @unique @default(uuid())
+  muw_user_uuid String?              @unique
+  muw_status    statusType           @default(NOT_ACTIVE)
+  wishlistItem  mst_wishlist_items[]
+}
+
+model mst_wishlist_items {
+  mwi_id                   Int                @id @default(autoincrement())
+  mwi_wishlist_uuid        String
+  mwi_product_uuid         String
+  mwi_product_variant_uuid String?
+  mwi_cart_items           Int                @default(0)
+  mwi_item_note            String
+  userWishlist             mst_user_wishilist @relation(fields: [mwi_wishlist_uuid], references: [muw_uuid])
+}
+
+model mst_brands {
+  mb_id   Int    @id @default(autoincrement())
+  mb_uuid String @default(uuid())
+  mb_name String
+}
+
+model mst_product {
+  mp_id                             Int                        @id @default(autoincrement())
+  mp_uuid                           String                     @unique @default(uuid())
+  mp_created_date                   DateTime
+  mp_created_by                     String
+  mp_updated_date                   DateTime?
+  mp_updated_by                     String?
+  mp_product_sku                    String
+  mp_product_name                   String
+  mp_product_price                  String
+  mp_product_brand_uuid             String
+  mp_product_brand                  String
+  mp_product_base_price             Float
+  mp_product_discount_price         Float
+  mp_product_store_uuid             String
+  mp_product_stock                  Int
+  mp_product_point_multiplication   Float                      @default(0.25)
+  mp_product_status                 String
+  mp_commision_affiliation_settings Json?
+  mp_product_general_settings_uuid  String?                    @unique
+  mp_product_variant_uuid           String?
+  mp_total_product_sold             Int
+  mp_product_is_preorder            Boolean?                   @default(false)
+  mp_product_is_flashsale           Boolean?                   @default(false)
+  mp_product_flashsale_price        Float?                     @default(0)
+  store                             mst_store_dc               @relation(fields: [mp_product_store_uuid], references: [msd_uuid])
+  productGeneralInfo                mst_product_general_info?
+  productReview                     mst_product_review[]
+  productVariant                    mst_product_variant_info[]
+
+  @@index([mp_product_general_settings_uuid])
+}
+
+model mst_product_general_info {
+  mpgi_id            Int         @id @default(autoincrement())
+  mpgi_uuid          String      @unique @default(uuid())
+  mpgi_product_uuid  String      @unique
+  mpgi_description   String?
+  mpgi_specification String?
+  mpgi_more_info     Json?
+  product            mst_product @relation(fields: [mpgi_product_uuid], references: [mp_uuid], onDelete: Cascade)
+}
+
+model mst_product_variant_info {
+  mpvi_id                            Int         @id @default(autoincrement())
+  mpvi_uuid                          String      @unique @default(uuid())
+  mpvi_product_uuid                  String
+  mpvi_created_date                  DateTime
+  mpvi_created_by                    String
+  mpvi_updated_date                  DateTime?
+  mpvi_updated_by                    String?
+  mpvi_variant_name                  String
+  mpvi_variant_stok                  Int
+  mpvi_variant_url                   String?
+  mpvi_variant_sold                  Int         @default(0)
+  mpvi_is_flashsale                  Boolean     @default(false)
+  mpvi_flashsale_discount_percentage Float       @default(0)
+  mpvi_flashsale_discount_price      Float       @default(0)
+  mpvi_flashsale_limit_stock         Int         @default(0)
+  product                            mst_product @relation(fields: [mpvi_product_uuid], references: [mp_uuid])
+}
+
+model mst_product_review {
+  mpr_id                   Int         @id @default(autoincrement())
+  mpr_uuid                 String      @unique @default(uuid())
+  mpr_product_uuid         String
+  mpr_variant_uuid         String?
+  mpr_star_value           Float       @default(0)
+  mpr_user_uuid            String
+  mpr_review_title         String?
+  mpr_review_description   String?
+  mpr_photo_url            Json?
+  mpr_video_url            String
+  mpr_reply_review_uuid    String
+  mpr_status               statusType
+  mpr_is_reported          Boolean     @default(false)
+  mpr_reported_description String?
+  product                  mst_product @relation(fields: [mpr_product_uuid], references: [mp_uuid])
+}
+
+model mst_flash_sale_info {
+  mfsi_id                  Int        @id @default(autoincrement())
+  mfsi_uuid                String     @unique @default(uuid())
+  mfsi_created_date        DateTime
+  mfsi_created_by          String
+  mfsi_updated_date        DateTime?
+  mfsi_updated_by          String?
+  mfsi_product_uuid        String
+  mfsi_product_name        String
+  mfsi_discount_percentage String?
+  mfsi_discount_price      String?
+  mfsi_limit_stock         Int        @default(0)
+  mfsi_status              statusType
+  mfsi_description         String?
+  mfsi_store_uuid          String?
+  mfsi_session_uuid        String?
+  mfsi_banner_url          String?
+}
+
+model mst_product_preorder {
+  mpp_id                  Int      @id @default(autoincrement())
+  mpp_uuid                String   @unique @default(uuid())
+  mpp_product_uuid        String
+  mpp_variant_uuid        String?
+  mpp_limit_stock         Int?
+  mpp_estimated_sent_date DateTime
+}
+
+model mst_session {
+  ms_id            Int    @id @default(autoincrement())
+  ms_uuid          String @unique @default(uuid())
+  ms_name          String
+  ms_start_session String
+  ms_end_session   String
+}
+
+model mst_product_main_category {
+  mpmc_id           Int                        @id @default(autoincrement())
+  mpmc_uuid         String                     @unique @default(uuid())
+  mpmc_created_date DateTime
+  mpmc_created_by   String
+  mpmc_updated_date DateTime?
+  mpmc_updated_by   String?
+  mpmc_name         String
+  subCategory       mst_product_sub_category[]
+}
+
+model mst_product_sub_category {
+  mpsc_id           Int                       @id @default(autoincrement())
+  mpsc_uuid         String                    @unique @default(uuid())
+  mpsc_main_uuid    String
+  mpsc_created_date DateTime
+  mpsc_created_by   String
+  mpsc_updated_date DateTime?
+  mpsc_updated_by   String?
+  mpsc_name         String
+  mainCategory      mst_product_main_category @relation(fields: [mpsc_main_uuid], references: [mpmc_uuid])
+}
+
+model mst_notification {
+  mn_id                Int                @id @default(autoincrement())
+  mn_uuid              String             @unique @default(uuid())
+  mn_created_date      DateTime
+  mn_created_by        String
+  mn_updated_date      DateTime?
+  mn_updated_by        String?
+  mn_type              NotificationType
+  mn_title             String
+  mn_description       String?
+  mn_target            NotificationTarget
+  mn_executed_date     DateTime
+  mn_executed_platform String
+  mn_user_uuid         String?
+}
+
+model mst_payment_source {
+  mps_id           Int    @id @default(autoincrement())
+  mps_uuid         String @unique @default(uuid())
+  mps_name         String
+  mps_logo_url     String
+  mps_thumnail_url String
+}
+
+model mst_point_settings {
+  mps_id                Int        @id @default(autoincrement())
+  mps_uuid              String     @unique @default(uuid())
+  mps_name              String
+  mps_type              PointType
+  mps_redeem_settings   Float      @default(0)
+  mps_discount_settings Float?     @default(0)
+  mps_status            statusType
+  mps_store_id          String?
+}
+
+model mst_shippers {
+  ms_id               Int    @id @default(autoincrement())
+  ms_uuid             String @unique @default(uuid())
+  ms_shipper_name     String
+  ms_shipper_type     String
+  ms_shipper_provider String
+  ms_logo_url         String
+}
+
+model mst_shipping_fee_settings {
+  msfs_id                  Int    @id @default(autoincrement())
+  msfs_uuid                String @unique @default(uuid())
+  msfs_transaction_type    String @default("E-COMMERCE")
+  msfs_nominal_threshold   Float
+  msfs_regions             Json
+  msfs_shipping_range      Int    @default(0)
+  msfs_shipping_fee_per_km Float
+}
+
+model mst_references_regions {
+  mrr_id          Int            @id @default(autoincrement())
+  mrr_uuid        String         @unique @default(uuid())
+  mrr_region_name String
+  store           mst_store_dc[]
+}
+
+model mst_list_provinces {
+  mlp_id   Int                     @id @default(autoincrement())
+  mlp_uuid String                  @unique @default(uuid())
+  mlp_name String
+  city     mst_list_city_regency[]
+}
+
+model mst_list_city_regency {
+  mlcr_id             Int                 @id @default(autoincrement())
+  mlcr_uuid           String              @unique @default(uuid())
+  mlcr_name           String
+  mlcr_provinces_uuid String
+  provinces           mst_list_provinces  @relation(fields: [mlcr_provinces_uuid], references: [mlp_uuid])
+  district            mst_list_district[]
+}
+
+model mst_list_district {
+  mld_id        Int                    @id @default(autoincrement())
+  mld_uuid      String                 @unique @default(uuid())
+  mld_name      String
+  mld_city_uuid String
+  city          mst_list_city_regency  @relation(fields: [mld_city_uuid], references: [mlcr_uuid])
+  subdistrict   mst_list_subdistrict[]
+}
+
+model mst_list_subdistrict {
+  mls_id            Int               @id @default(autoincrement())
+  mls_uuid          String            @unique @default(uuid())
+  mls_name          String
+  mls_district_uuid String
+  district          mst_list_district @relation(fields: [mls_district_uuid], references: [mld_uuid])
+}
+
+model mst_user_cms {
+  muc_id          Int     @id @default(autoincrement())
+  muc_uuid        String  @unique @default(uuid())
+  muc_username    String
+  muc_password    String  @unique
+  muc_ip_address  String?
+  muc_device_type String?
+  muc_role_uuid   String
+  muc_role_name   String?
+  muc_store_uuid  String?
+}
+
+model mst_role_cms {
+  mrc_id        Int    @id @default(autoincrement())
+  mrc_uuid      String @unique @default(uuid())
+  mrc_user_uuid String
+  mrc_role_name String
+}
+
+model mst_menu_cms {
+  mmmc_id         Int     @id @default(autoincrement())
+  mmmc_uuid       String  @unique @default(uuid())
+  mmc_menu_name   String
+  mmc_parent_menu String?
+  mmc_menu_depth  String  @db.VarChar(1)
+}
+
+model mst_role_access_cms {
+  mrac_id             Int    @id @default(autoincrement())
+  mrac_uuid           String @unique @default(uuid())
+  mrac_role_uuid      String
+  mrac_menu_uuid      String
+  mrc_clearence_level String
+}
+
+enum UserType {
+  USER
+  MEMBER
+  RESELLER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHERS
+}
+
+enum MembershipLevel {
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum Religion {
+  ISLAM
+  CATHOLIC
+  PROTESTANT
+  BUDDHIST
+  HINDU
+  CONFUCIANISM
+}
+
+enum StoreType {
+  DC
+  STORE
+}
+
+enum CouponVoucherType {
+  FREE
+  PAID
+}
+
+enum statusType {
+  ACTIVE
+  NOT_ACTIVE
+}
+
+enum ShowingType {
+  SHOWN
+  NOT_SHOWN
+}
+
+enum NotificationType {
+  INFO
+  PROMO
+  DISKON
+  FLASH
+}
+
+enum NotificationTarget {
+  ALL
+  PRODUCT_BOUGHT
+  PRODUCT_NOT_BOUGH
+  PRODUCT_IN_CART
+  CART_NOT_NULL
+}
+
+enum PointType {
+  REGULAR
+  CASHBACK
+  RESELLER
+}
+
+enum TransactionCondition {
+  MORE
+  MORE_EQUAL
+  LESS_EQUAL
+  LESS
+}

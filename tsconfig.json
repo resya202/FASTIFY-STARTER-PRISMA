@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "../../lib/db/*": [
+        "app/lib/db/*"
+      ],
+      "app/*": [
+        "./app/*"
+      ]
+    }
+  },
+  "include": [
+    "./app.ts",
+    "app/**/*.ts",
+    "app/lib/db/*.js"
+  ]
+}
